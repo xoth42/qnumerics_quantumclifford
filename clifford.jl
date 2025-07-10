@@ -29,8 +29,6 @@ P"XX" == P"X" ⊗ P"X"
 # low level function to check for commutativity
 comm(P"X", P"Z")
 
-##
-
 # One of the value adds of this package is that behind
 # the convenient syntax, the low-level representation
 # of the operators is very compact and fast.
@@ -39,7 +37,7 @@ a_billion = 1_000_000_000
 l = random_pauli(a_billion)
 r = random_pauli(a_billion)
 
-@btime comm(l, r)
+@benchmark comm(l, r)
 
 # Two bits per Pauli; multiple qubits packed in a single Int primitive type.
 
@@ -47,21 +45,23 @@ p = P"XIZY"
 
 bitstring.(UInt8.(p.xz))
 
-bits(arr) = bitstring.(UInt8.(arr))
-
-##
+bits(arr) = bitstring.(UInt8.(arr));
 
 # ## Pauli multiplication is bitwise ⊻ (XOR)
 
 P"X" * P"Z"
 
+#
+
 (P"XYI".xz, P"ZZI".xz) .|> bits
+
+#
 
 (P"XYI" * P"ZZI").xz .|> bits
 
-(P"XYI".xz .⊻ P"ZZI".xz) .|> bits
+#
 
-##
+(P"XYI".xz .⊻ P"ZZI".xz) .|> bits
 
 # # Stabilizer states
 #
@@ -73,15 +73,27 @@ P"X" * P"Z"
 
 S"X"
 
+#
+
 S"X" |> Ket
+
+#
 
 S"Z" |> Ket
 
+#
+
 S"Z" ⊗ S"Z"
+
+#
 
 S"ZI IZ" |> Ket
 
+#
+
 S"ZI -IZ" |> Ket
+
+#
 
 S"XX ZZ" |> Ket
 
@@ -93,18 +105,24 @@ S"XX ZZ" |> Ket
 # e.g. just by doing row operations on the matrix of coefficients.
 
 state = S"ZI IZ"
+
+#
+
 row1 = state[1]
 row2 = state[2]
 new_state = Stabilizer([row1, row1*row2])
 
+#
+
 state |> Ket
+
+#
+
 new_state |> Ket
 
 # You can do (binary) Gaussian elimination to get a canonical form.
 
 canonicalize!(new_state)
-
-##
 
 # There is a variety of different ways to do the Gaussian elimination
 # (do you run first X, then Z, interleave, etc), and each is useful in different contexts.
@@ -114,27 +132,33 @@ fig = Figure();
 stabilizerplot_axis(fig[1,1], state);
 fig
 
+#
+
 canonicalize!(state);
 fig = Figure();
 stabilizerplot_axis(fig[1,1], state);
 fig
+
+#
 
 canonicalize_rref!(state);
 fig = Figure();
 stabilizerplot_axis(fig[1,1], state);
 fig
 
+#
+
 canonicalize_clip!(state);
 fig = Figure();
 stabilizerplot_axis(fig[1,1], state);
 fig
 
+#
+
 canonicalize_gott!(state);
 fig = Figure();
 stabilizerplot_axis(fig[1,1], state);
 fig
-
-##
 
 # # Unitary dynamics of a Stabilizer state
 #
@@ -157,14 +181,14 @@ fig
 # but what we lose is that we now support only Unitaries from the Clifford group,
 # i.e. the unitary subgroup that maps Pauli operators to Pauli operators.
 
-##
-
 # ## Clifford action as binary matrix multiplication
 #
 # We can write Pauli operators as binary vectors,
 # and we can decompose such vectors into weighted sums of basis vectors.
 
 P"XYZ"
+
+#
 
 P"XII" * P"IXI" * P"IZI" * P"IIZ"
 
@@ -187,9 +211,15 @@ tCNOT * S"XI IZ"
 
 tCNOT * S"XY"
 
+#
+
 P"XI" * P"IX" * P"IZ"
 
+#
+
 tCNOT
+
+#
 
 P"XX" * P"IX" * P"ZZ"
 
@@ -197,13 +227,17 @@ P"XX" * P"IX" * P"ZZ"
 
 gf2CNOT = stab_to_gf2(tab(tCNOT))'
 
+#
+
 gf2stab = stab_to_gf2(S"XY")'
+
+#
 
 gf2CNOT * gf2stab .% 2
 
-stab_to_gf2(tCNOT*S"XY")
+#
 
-##
+stab_to_gf2(tCNOT*S"XY")
 
 # # Named Small Gates
 #
@@ -211,10 +245,11 @@ stab_to_gf2(tCNOT*S"XY")
 # For those we have specialized fast gate implementations.
 
 state = random_stabilizer(100);
-@btime apply!(state, tCNOT, [1,2]);
-@btime apply!(state, sCNOT(1,2));
+@benchmark apply!(state, tCNOT, [1,2])
 
-##
+#
+
+@benchmark apply!(state, sCNOT(1,2))
 
 # # Pauli Measurements
 #
@@ -237,6 +272,8 @@ meas = P"IXI"
 
 QuantumClifford.mul_left!(state, 3, 2)
 
+#
+
 state[2] = meas
 state
 
@@ -255,9 +292,9 @@ meas = P"YYX"
 
 QuantumClifford.mul_left!(state, 1, 2)
 
-project!(S"XXX ZZI IZZ", P"YYX")[3] # project! gives a bunch of information; here just get the phase
+#
 
-##
+project!(S"XXX ZZI IZZ", P"YYX")[3] # project! gives a bunch of information; here just get the phase
 
 # # The Destabilizer Formalism
 #
@@ -269,21 +306,29 @@ project!(S"XXX ZZI IZZ", P"YYX")[3] # project! gives a bunch of information; her
 state = S"XXX ZZI IZZ"
 dstate = MixedDestabilizer(state)
 
+#
+
 stabilizerview(dstate)
+
+#
+
 destabilizerview(dstate)
+
+#
 
 meas = P"YYX"
 
-##
+#
 
 state = random_stabilizer(100);
 dstate = MixedDestabilizer(state);
 meas = state[10]*state[30]*state[60];
 
-@time project!(state, meas); # TODO too many allocations
-@time project!(dstate, meas); # TODO some allocations
+@elapsed project!(state, meas) # TODO too many allocations
 
-##
+#
+
+@elapsed project!(dstate, meas) # TODO some allocations
 
 # # Single Qubit Measurements
 #
@@ -294,9 +339,10 @@ meas = single_x(500,4)
 named_meas = sMX(4)
 
 @benchmark apply!(_d, meas) setup=(_d=copy(dstate)) evals=1 # TODO this is faster!?
-@benchmark apply!(_d, named_meas) setup=(_d=copy(dstate)) evals=1
 
-##
+#
+
+@benchmark apply!(_d, named_meas) setup=(_d=copy(dstate)) evals=1
 
 # # Mixed Stabilizer States
 #
@@ -311,8 +357,6 @@ using LinearAlgebra: rank
 
 rank(mdstate)
 
-##
-
 # Measurements can increase the rank
 
 apply!(mdstate, PauliMeasurement(P"XXX"))
@@ -325,8 +369,6 @@ traceout!(mdstate, [1])
 
 rank(mdstate)
 
-##
-
 # # Row- and Column-orientation
 #
 # Lastly, as usual with linear algebra operations (albeit binary linear algebra here)
@@ -337,16 +379,29 @@ c = random_clifford(600)
 p = random_pauli(600)
 
 typeof(tab(s))
+
+#
+
 typeof(fastcolumn(tab(s)))
+
+#
 
 # TODO not interesting
 ccol = CliffordOperator(fastcolumn(tab(c))); # TODO there should be a method for clifford operator
 @btime apply!(s,c);
 
-@btime canonicalize!(_s) setup=(_s=copy(s)) evals=1;
+#
 
-@btime canonicalize!(_s) setup=(_s=fastcolumn(copy(s))) evals=1;
+@benchmark canonicalize!(_s) setup=(_s=copy(s)) evals=1
 
-@btime apply!(_s, sCNOT(1,2)) setup=(_s=copy(s)) evals=1;
+#
 
-@btime apply!(_s, sCNOT(1,2)) setup=(_s=fastcolumn(copy(s))) evals=1;
+@benchmark canonicalize!(_s) setup=(_s=fastcolumn(copy(s))) evals=1
+
+#
+
+@benchmark apply!(_s, sCNOT(1,2)) setup=(_s=copy(s)) evals=1
+
+#
+
+@benchmark apply!(_s, sCNOT(1,2)) setup=(_s=fastcolumn(copy(s))) evals=1
